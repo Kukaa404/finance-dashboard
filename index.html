@@ -193,7 +193,7 @@ const CH_CFG = [
   {key:'alipay', name:'支付宝',   pillClass:'pill-blue',  color:'#378ADD'},
   {key:'wechat', name:'微信',     pillClass:'pill-teal',  color:'#1D9E75'},
   {key:'cmb',    name:'招商银行', pillClass:'pill-amber', color:'#BA7517'},
-  {key:'other',  name:'其他银行', pillClass:'pill-purple',color:'#7F77DD'},
+  {key:'other',  name:'工商银行', pillClass:'pill-purple',color:'#7F77DD'},
 ];
 const D_CFG = [
   {key:'cmb',   name:'招商信用卡', color:'#D85A30'},
@@ -220,8 +220,13 @@ async function loadData(){
     const dRows = json.debts.slice(1);
     const last6s = sRows.slice(-6);
     const last6d = dRows.slice(-6);
-    sData = last6s.map(r=>({month:r[0],alipay:+r[1],wechat:+r[2],cmb:+r[3],other:+r[4]}));
-    dData = last6d.map(r=>({month:r[0],cmb:+r[1],citic:+r[2]}));
+    function fmtMonth(v){
+      const d=new Date(v);
+      if(isNaN(d.getTime())) return String(v);
+      return (d.getFullYear())+'/'+(d.getMonth()+1)+'月';
+    }
+    sData = last6s.map(r=>({month:fmtMonth(r[0]),alipay:+r[1],wechat:+r[2],cmb:+r[3],other:+r[4]}));
+    dData = last6d.map(r=>({month:fmtMonth(r[0]),cmb:+r[1],citic:+r[2]}));
     document.getElementById('loading').style.display='none';
     document.getElementById('dashboard').style.display='block';
     render();
