@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>我的存款看板</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --color-background-primary:#ffffff;
+  --color-background-secondary:#f5f4f0;
+  --color-text-primary:#1a1a18;
+  --color-text-secondary:#5f5e5a;
+  --color-text-tertiary:#888780;
+  --color-border-tertiary:rgba(0,0,0,0.12);
+  --color-border-secondary:rgba(0,0,0,0.22);
+  --border-radius-md:8px;
+  --border-radius-lg:12px;
+  --font-sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --color-background-primary:#1e1e1c;
+    --color-background-secondary:#2a2a28;
+    --color-text-primary:#f0ede6;
+    --color-text-secondary:#b4b2a9;
+    --color-text-tertiary:#888780;
+    --color-border-tertiary:rgba(255,255,255,0.10);
+    --color-border-secondary:rgba(255,255,255,0.20);
+  }
+}
+body{font-family:var(--font-sans);background:var(--color-background-primary);color:var(--color-text-primary);padding:1.5rem;max-width:860px;margin:0 auto}
+.db{padding:1.5rem 0 2rem}
+.row{display:grid;gap:10px}
+.r4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.r2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.sec{margin-bottom:2rem}
+.sec-label{font-size:11px;font-weight:500;color:var(--color-text-tertiary);letter-spacing:.08em;margin-bottom:.75rem}
+.met{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:1rem 1.125rem}
+.met-lbl{font-size:11px;color:var(--color-text-secondary);margin-bottom:6px}
+.met-val{font-size:22px;font-weight:500;color:var(--color-text-primary);line-height:1}
+.met-sub{font-size:11px;color:var(--color-text-tertiary);margin-top:4px}
+.blue{color:#185FA5}.red{color:#A32D2D}.pos{color:#3B6D11}.neg{color:#A32D2D}
+.goal-wrap{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem 1.5rem}
+.goal-top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px}
+.goal-nums{display:flex;flex-direction:column;gap:3px}
+.goal-curr{font-size:28px;font-weight:500;color:var(--color-text-primary);line-height:1}
+.goal-of{font-size:12px;color:var(--color-text-tertiary)}
+.goal-right{text-align:right}
+.goal-pct{font-size:32px;font-weight:500;color:#185FA5;line-height:1}
+.goal-remain{font-size:11px;color:var(--color-text-tertiary);margin-top:3px}
+.track{height:8px;background:var(--color-background-secondary);border-radius:99px;overflow:hidden;margin-bottom:8px}
+.fill{height:100%;border-radius:99px;background:#378ADD;transition:width .7s cubic-bezier(.4,0,.2,1)}
+.fill.done{background:#1D9E75}
+.track-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--color-text-tertiary)}
+.ch-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:.875rem 1rem}
+.ch-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.ch-name{font-size:11px;color:var(--color-text-secondary)}
+.ch-pill{font-size:10px;padding:2px 7px;border-radius:99px;font-weight:500}
+.pill-blue{background:#E6F1FB;color:#185FA5}
+.pill-teal{background:#E1F5EE;color:#0F6E56}
+.pill-amber{background:#FAEEDA;color:#633806}
+.pill-purple{background:#EEEDFE;color:#3C3489}
+.ch-val{font-size:18px;font-weight:500;color:var(--color-text-primary);margin-bottom:7px}
+.ch-track{height:4px;background:var(--color-background-secondary);border-radius:99px;overflow:hidden}
+.ch-fill{height:100%;border-radius:99px;transition:width .6s ease}
+.ch-foot{display:flex;justify-content:space-between;font-size:10px;color:var(--color-text-tertiary);margin-top:5px}
+.dcard{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.125rem}
+.dcard-name{font-size:11px;color:var(--color-text-secondary);margin-bottom:5px}
+.dcard-val{font-size:20px;font-weight:500;color:#993556}
+.dcard-trend{display:flex;align-items:center;gap:5px;margin-top:5px}
+.trend-badge{font-size:10px;padding:2px 7px;border-radius:99px;font-weight:500}
+.badge-up{background:#FCEBEB;color:#A32D2D}
+.badge-dn{background:#E1F5EE;color:#0F6E56}
+.chart-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.125rem 1.25rem;margin-bottom:1rem}
+.chart-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px}
+.chart-title{font-size:12px;font-weight:500;color:var(--color-text-primary)}
+.leg{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:var(--color-text-secondary)}
+.leg span{display:flex;align-items:center;gap:4px}
+.leg-sq{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.upd-btn-wrap{text-align:center;padding-top:.5rem}
+.upd-btn{font-size:12px;padding:7px 20px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:transparent;color:var(--color-text-secondary);cursor:pointer}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--color-background-primary);border-radius:var(--border-radius-lg);border:0.5px solid var(--color-border-tertiary);padding:1.375rem 1.5rem;width:340px;max-width:92vw;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:15px;font-weight:500;color:var(--color-text-primary);margin-bottom:2px}
+.modal-sub{font-size:11px;color:var(--color-text-tertiary);margin-bottom:1.125rem}
+.modal-group{font-size:10px;font-weight:500;color:var(--color-text-tertiary);letter-spacing:.07em;margin:14px 0 8px;padding-bottom:5px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.modal-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.modal-row label{font-size:12px;color:var(--color-text-secondary)}
+.modal-row input{width:140px;font-size:13px;padding:5px 9px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);text-align:right}
+.modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem}
+.btn-save{font-size:13px;padding:7px 20px;border-radius:var(--border-radius-md);border:none;background:#378ADD;color:#fff;cursor:pointer}
+.btn-cancel{font-size:13px;padding:7px 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);cursor:pointer}
+@media(max-width:600px){.r4{grid-template-columns:repeat(2,minmax(0,1fr))}.r2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="db">
+
+<div class="sec">
+  <div class="sec-label">总览</div>
+  <div class="row r4">
+    <div class="met"><div class="met-lbl">净资产</div><div class="met-val blue" id="m-net">—</div><div class="met-sub">存款 − 负债</div></div>
+    <div class="met"><div class="met-lbl">总存款</div><div class="met-val" id="m-total">—</div><div class="met-sub">四渠道合计</div></div>
+    <div class="met"><div class="met-lbl">总负债</div><div class="met-val red" id="m-debt">—</div><div class="met-sub">信用卡合计</div></div>
+    <div class="met"><div class="met-lbl">本月净增</div><div class="met-val" id="m-inc">—</div><div class="met-sub">vs 上月净资产</div></div>
+  </div>
+</div>
+
+<div class="sec">
+  <div class="sec-label">存款目标 · ¥1,000,000</div>
+  <div class="goal-wrap">
+    <div class="goal-top">
+      <div class="goal-nums">
+        <span class="goal-curr" id="g-curr">—</span>
+        <span class="goal-of">目标 ¥1,000,000</span>
+      </div>
+      <div class="goal-right">
+        <div class="goal-pct" id="g-pct">—</div>
+        <div class="goal-remain" id="g-remain">还差 —</div>
+      </div>
+    </div>
+    <div class="track"><div class="fill" id="g-bar" style="width:0%"></div></div>
+    <div class="track-labels"><span>¥0</span><span>¥25万</span><span>¥50万</span><span>¥75万</span><span>¥100万</span></div>
+  </div>
+</div>
+
+<div class="sec">
+  <div class="sec-label">存款渠道</div>
+  <div class="row r4" id="ch-grid"></div>
+</div>
+
+<div class="sec">
+  <div class="sec-label">信用卡负债</div>
+  <div class="row r2" id="debt-grid"></div>
+</div>
+
+<div class="sec">
+  <div class="chart-card">
+    <div class="chart-hd">
+      <span class="chart-title">存款趋势（近6个月）</span>
+      <div class="leg" id="save-leg"></div>
+    </div>
+    <div style="position:relative;height:175px"><canvas id="saveChart"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-hd">
+      <span class="chart-title">信用卡消费趋势（近6个月）</span>
+      <div class="leg" id="debt-leg"></div>
+    </div>
+    <div style="position:relative;height:175px"><canvas id="debtChart"></canvas></div>
+  </div>
+</div>
+
+<div class="upd-btn-wrap">
+  <button class="upd-btn" onclick="openModal()">✏ 更新本月数据</button>
+</div>
+
+</div>
+
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <div class="modal-title">更新本月数据</div>
+    <div class="modal-sub" id="modal-month"></div>
+    <div class="modal-group">存款渠道</div>
+    <div class="modal-row"><label>支付宝</label><input id="f-alipay" type="number"></div>
+    <div class="modal-row"><label>微信</label><input id="f-wechat" type="number"></div>
+    <div class="modal-row"><label>招商银行</label><input id="f-cmb" type="number"></div>
+    <div class="modal-row"><label>其他银行</label><input id="f-other" type="number"></div>
+    <div class="modal-group">信用卡账单</div>
+    <div class="modal-row"><label>招商信用卡</label><input id="f-d-cmb" type="number"></div>
+    <div class="modal-row"><label>中信信用卡</label><input id="f-d-citic" type="number"></div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-save" onclick="saveModal()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const GOAL = 1000000;
+const MONTHS = ['10月','11月','12月','1月','2月','3月'];
+
+const CH = [
+  {key:'alipay', name:'支付宝',   pillClass:'pill-blue',  fillColor:'#378ADD', history:[18000,19500,21000,22000,23500,24000]},
+  {key:'wechat', name:'微信',     pillClass:'pill-teal',  fillColor:'#1D9E75', history:[5000,5200,5500,5800,6200,6500]},
+  {key:'cmb',    name:'招商银行', pillClass:'pill-amber', fillColor:'#BA7517', history:[30000,33000,35000,38000,40000,43000]},
+  {key:'other',  name:'其他银行', pillClass:'pill-purple',fillColor:'#7F77DD', history:[10000,10500,11000,11500,12000,13000]},
+];
+const DEBTS = [
+  {key:'d-cmb',  name:'招商信用卡', history:[3200,2800,4100,3600,2900,3800]},
+  {key:'d-citic',name:'中信信用卡', history:[1500,2000,1800,2200,1600,2100]},
+];
+const D_COLORS = ['#D85A30','#D4537E'];
+
+function fmt(n){return '¥'+Math.round(Math.abs(n)).toLocaleString('zh-CN')}
+function last(a){return a[a.length-1]}
+function prev(a){return a[a.length-2]}
+function totalS(){return CH.reduce((s,c)=>s+last(c.history),0)}
+function totalD(){return DEBTS.reduce((s,d)=>s+last(d.history),0)}
+function totalSprev(){return CH.reduce((s,c)=>s+prev(c.history),0)}
+function totalDprev(){return DEBTS.reduce((s,d)=>s+prev(d.history),0)}
+
+function updateMetrics(){
+  const ts=totalS(),td=totalD(),net=ts-td;
+  const inc=net-(totalSprev()-totalDprev());
+  document.getElementById('m-net').textContent=fmt(net);
+  document.getElementById('m-total').textContent=fmt(ts);
+  document.getElementById('m-debt').textContent=fmt(td);
+  const el=document.getElementById('m-inc');
+  el.textContent=(inc>=0?'+':'-')+fmt(inc);
+  el.className='met-val '+(inc>=0?'pos':'neg');
+}
+
+function updateGoal(){
+  const ts=totalS(),p=Math.min(100,Math.round(ts/GOAL*100));
+  document.getElementById('g-curr').textContent=fmt(ts);
+  document.getElementById('g-pct').textContent=p+'%';
+  document.getElementById('g-remain').textContent='还差 '+fmt(Math.max(0,GOAL-ts));
+  const bar=document.getElementById('g-bar');
+  bar.style.width=p+'%';
+  bar.className='fill'+(p>=100?' done':'');
+}
+
+function renderChannels(){
+  const ts=totalS();
+  document.getElementById('ch-grid').innerHTML=CH.map(c=>{
+    const v=last(c.history),p=Math.round(v/ts*100),diff=v-prev(c.history);
+    return `<div class="ch-card">
+      <div class="ch-top"><span class="ch-name">${c.name}</span><span class="ch-pill ${c.pillClass}">${p}%</span></div>
+      <div class="ch-val">${fmt(v)}</div>
+      <div class="ch-track"><div class="ch-fill" style="width:${p}%;background:${c.fillColor}"></div></div>
+      <div class="ch-foot"><span>占比 ${p}%</span><span>${diff>=0?'+':'-'}${fmt(diff)}</span></div>
+    </div>`;
+  }).join('');
+}
+
+function renderDebts(){
+  document.getElementById('debt-grid').innerHTML=DEBTS.map((d,i)=>{
+    const v=last(d.history),diff=v-prev(d.history),up=diff>0;
+    return `<div class="dcard">
+      <div class="dcard-name">${d.name}</div>
+      <div class="dcard-val">${fmt(v)}</div>
+      <div class="dcard-trend">
+        <span class="trend-badge ${up?'badge-up':'badge-dn'}">${up?'▲':'▼'} ${fmt(Math.abs(diff))}</span>
+        <span style="font-size:10px;color:var(--color-text-tertiary)">${up?'较上月多':'较上月少'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+let saveChart=null,debtChart=null;
+function renderCharts(){
+  document.getElementById('save-leg').innerHTML=CH.map(c=>`<span><span class="leg-sq" style="background:${c.fillColor}"></span>${c.name}</span>`).join('');
+  if(saveChart) saveChart.destroy();
+  saveChart=new Chart(document.getElementById('saveChart'),{
+    type:'line',
+    data:{labels:MONTHS,datasets:CH.map(c=>({
+      label:c.name,data:c.history,
+      borderColor:c.fillColor,backgroundColor:c.fillColor+'20',
+      borderWidth:2,tension:.4,pointRadius:3,pointHoverRadius:5,fill:false
+    }))},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
+      scales:{
+        x:{grid:{color:'#88878012'},ticks:{font:{size:10},color:'#888780'},border:{display:false}},
+        y:{grid:{color:'#88878012'},ticks:{font:{size:10},color:'#888780',callback:v=>'¥'+(v/1000).toFixed(0)+'k'},border:{display:false}}
+      }}
+  });
+
+  document.getElementById('debt-leg').innerHTML=DEBTS.map((d,i)=>`<span><span class="leg-sq" style="background:${D_COLORS[i]}"></span>${d.name}</span>`).join('');
+  if(debtChart) debtChart.destroy();
+  debtChart=new Chart(document.getElementById('debtChart'),{
+    type:'bar',
+    data:{labels:MONTHS,datasets:DEBTS.map((d,i)=>({
+      label:d.name,data:d.history,
+      backgroundColor:D_COLORS[i]+'bb',borderWidth:0,borderRadius:4
+    }))},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
+      scales:{
+        x:{stacked:true,grid:{display:false},ticks:{font:{size:10},color:'#888780'},border:{display:false}},
+        y:{stacked:true,grid:{color:'#88878012'},ticks:{font:{size:10},color:'#888780',callback:v=>'¥'+(v/1000).toFixed(1)+'k'},border:{display:false}}
+      }}
+  });
+}
+
+function refresh(){updateMetrics();updateGoal();renderChannels();renderDebts();renderCharts();}
+
+function openModal(){
+  const now=new Date();
+  document.getElementById('modal-month').textContent=now.getFullYear()+'年'+(now.getMonth()+1)+'月';
+  CH.forEach(c=>{const el=document.getElementById('f-'+c.key);if(el)el.value=last(c.history);});
+  DEBTS.forEach(d=>{const el=document.getElementById('f-'+d.key);if(el)el.value=last(d.history);});
+  document.getElementById('modal-bg').classList.add('open');
+}
+function closeModal(){document.getElementById('modal-bg').classList.remove('open');}
+function saveModal(){
+  CH.forEach(c=>{
+    const el=document.getElementById('f-'+c.key);
+    if(el){c.history.push(parseFloat(el.value)||last(c.history));c.history.shift();}
+  });
+  DEBTS.forEach(d=>{
+    const el=document.getElementById('f-'+d.key);
+    if(el){d.history.push(parseFloat(el.value)||last(d.history));d.history.shift();}
+  });
+  closeModal();refresh();
+}
+
+document.getElementById('modal-bg').addEventListener('click',function(e){
+  if(e.target===this) closeModal();
+});
+
+refresh();
+</script>
+</body>
+</html>
