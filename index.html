@@ -80,6 +80,8 @@ body{font-family:var(--font-sans);background:var(--color-background-primary);col
 .leg-sq{width:8px;height:8px;border-radius:2px;flex-shrink:0}
 .upd-btn-wrap{text-align:center;padding-top:.5rem}
 .upd-btn{font-size:12px;padding:7px 20px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:transparent;color:var(--color-text-secondary);cursor:pointer}
+.loading{text-align:center;padding:3rem 0;font-size:13px;color:var(--color-text-tertiary)}
+.error-bar{background:#FCEBEB;color:#A32D2D;font-size:12px;padding:8px 14px;border-radius:var(--border-radius-md);margin-bottom:1rem;display:none}
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center}
 .modal-bg.open{display:flex}
 .modal{background:var(--color-background-primary);border-radius:var(--border-radius-lg);border:0.5px solid var(--color-border-tertiary);padding:1.375rem 1.5rem;width:340px;max-width:92vw;max-height:90vh;overflow-y:auto}
@@ -91,12 +93,17 @@ body{font-family:var(--font-sans);background:var(--color-background-primary);col
 .modal-row input{width:140px;font-size:13px;padding:5px 9px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);text-align:right}
 .modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem}
 .btn-save{font-size:13px;padding:7px 20px;border-radius:var(--border-radius-md);border:none;background:#378ADD;color:#fff;cursor:pointer}
+.btn-save:disabled{opacity:.5;cursor:not-allowed}
 .btn-cancel{font-size:13px;padding:7px 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);cursor:pointer}
 @media(max-width:600px){.r4{grid-template-columns:repeat(2,minmax(0,1fr))}.r2{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<div class="db">
+
+<div id="loading" class="loading">数据加载中...</div>
+<div id="error-bar" class="error-bar"></div>
+
+<div class="db" id="dashboard" style="display:none">
 
 <div class="sec">
   <div class="sec-label">总览</div>
@@ -163,49 +170,78 @@ body{font-family:var(--font-sans);background:var(--color-background-primary);col
   <div class="modal">
     <div class="modal-title">更新本月数据</div>
     <div class="modal-sub" id="modal-month"></div>
-    <div class="modal-group">存款渠道</div>
-    <div class="modal-row"><label>支付宝</label><input id="f-alipay" type="number"></div>
-    <div class="modal-row"><label>微信</label><input id="f-wechat" type="number"></div>
-    <div class="modal-row"><label>招商银行</label><input id="f-cmb" type="number"></div>
-    <div class="modal-row"><label>其他银行</label><input id="f-other" type="number"></div>
-    <div class="modal-group">信用卡账单</div>
-    <div class="modal-row"><label>招商信用卡</label><input id="f-d-cmb" type="number"></div>
-    <div class="modal-row"><label>中信信用卡</label><input id="f-d-citic" type="number"></div>
+    <div class="modal-group">存款渠道（当前余额）</div>
+    <div class="modal-row"><label>支付宝</label><input id="f-alipay" type="number" placeholder="0"></div>
+    <div class="modal-row"><label>微信</label><input id="f-wechat" type="number" placeholder="0"></div>
+    <div class="modal-row"><label>招商银行</label><input id="f-cmb" type="number" placeholder="0"></div>
+    <div class="modal-row"><label>其他银行</label><input id="f-other" type="number" placeholder="0"></div>
+    <div class="modal-group">信用卡账单（本月消费）</div>
+    <div class="modal-row"><label>招商信用卡</label><input id="f-d-cmb" type="number" placeholder="0"></div>
+    <div class="modal-row"><label>中信信用卡</label><input id="f-d-citic" type="number" placeholder="0"></div>
     <div class="modal-foot">
       <button class="btn-cancel" onclick="closeModal()">取消</button>
-      <button class="btn-save" onclick="saveModal()">保存</button>
+      <button class="btn-save" id="save-btn" onclick="saveModal()">保存</button>
     </div>
   </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
+const API = 'https://script.google.com/macros/s/AKfycbyTWXrYRm4mF5QyhQnptDFvWKk9WSbpswWN0AeE6xZeKN7Az9Vz9BgrhRgAILw0sRPC/exec';
 const GOAL = 1000000;
-const MONTHS = ['10月','11月','12月','1月','2月','3月'];
+const CH_CFG = [
+  {key:'alipay', name:'支付宝',   pillClass:'pill-blue',  color:'#378ADD'},
+  {key:'wechat', name:'微信',     pillClass:'pill-teal',  color:'#1D9E75'},
+  {key:'cmb',    name:'招商银行', pillClass:'pill-amber', color:'#BA7517'},
+  {key:'other',  name:'其他银行', pillClass:'pill-purple',color:'#7F77DD'},
+];
+const D_CFG = [
+  {key:'cmb',   name:'招商信用卡', color:'#D85A30'},
+  {key:'citic', name:'中信信用卡', color:'#D4537E'},
+];
 
-const CH = [
-  {key:'alipay', name:'支付宝',   pillClass:'pill-blue',  fillColor:'#378ADD', history:[18000,19500,21000,22000,23500,24000]},
-  {key:'wechat', name:'微信',     pillClass:'pill-teal',  fillColor:'#1D9E75', history:[5000,5200,5500,5800,6200,6500]},
-  {key:'cmb',    name:'招商银行', pillClass:'pill-amber', fillColor:'#BA7517', history:[30000,33000,35000,38000,40000,43000]},
-  {key:'other',  name:'其他银行', pillClass:'pill-purple',fillColor:'#7F77DD', history:[10000,10500,11000,11500,12000,13000]},
-];
-const DEBTS = [
-  {key:'d-cmb',  name:'招商信用卡', history:[3200,2800,4100,3600,2900,3800]},
-  {key:'d-citic',name:'中信信用卡', history:[1500,2000,1800,2200,1600,2100]},
-];
-const D_COLORS = ['#D85A30','#D4537E'];
+let sData=[], dData=[], saveChart=null, debtChart=null;
 
 function fmt(n){return '¥'+Math.round(Math.abs(n)).toLocaleString('zh-CN')}
-function last(a){return a[a.length-1]}
-function prev(a){return a[a.length-2]}
-function totalS(){return CH.reduce((s,c)=>s+last(c.history),0)}
-function totalD(){return DEBTS.reduce((s,d)=>s+last(d.history),0)}
-function totalSprev(){return CH.reduce((s,c)=>s+prev(c.history),0)}
-function totalDprev(){return DEBTS.reduce((s,d)=>s+prev(d.history),0)}
+
+function showError(msg){
+  const el=document.getElementById('error-bar');
+  el.textContent=msg; el.style.display='block';
+  setTimeout(()=>el.style.display='none', 5000);
+}
+
+async function loadData(){
+  document.getElementById('loading').style.display='block';
+  document.getElementById('dashboard').style.display='none';
+  try {
+    const res = await fetch(API+'?action=read');
+    const json = await res.json();
+    const sRows = json.savings.slice(1);
+    const dRows = json.debts.slice(1);
+    const last6s = sRows.slice(-6);
+    const last6d = dRows.slice(-6);
+    sData = last6s.map(r=>({month:r[0],alipay:+r[1],wechat:+r[2],cmb:+r[3],other:+r[4]}));
+    dData = last6d.map(r=>({month:r[0],cmb:+r[1],citic:+r[2]}));
+    document.getElementById('loading').style.display='none';
+    document.getElementById('dashboard').style.display='block';
+    render();
+  } catch(e){
+    document.getElementById('loading').textContent='加载失败，请刷新重试';
+    showError('无法连接数据源，请检查网络或 Apps Script 权限');
+  }
+}
+
+function lastS(){return sData[sData.length-1]}
+function prevS(){return sData[sData.length-2]||lastS()}
+function lastD(){return dData[dData.length-1]}
+function prevD(){return dData[dData.length-2]||lastD()}
+
+function totalS(row){return CH_CFG.reduce((s,c)=>s+(row[c.key]||0),0)}
+function totalD(row){return D_CFG.reduce((s,c)=>s+(row[c.key]||0),0)}
 
 function updateMetrics(){
-  const ts=totalS(),td=totalD(),net=ts-td;
-  const inc=net-(totalSprev()-totalDprev());
+  const ts=totalS(lastS()), td=totalD(lastD()), net=ts-td;
+  const inc=net-(totalS(prevS())-totalD(prevD()));
   document.getElementById('m-net').textContent=fmt(net);
   document.getElementById('m-total').textContent=fmt(ts);
   document.getElementById('m-debt').textContent=fmt(td);
@@ -215,7 +251,7 @@ function updateMetrics(){
 }
 
 function updateGoal(){
-  const ts=totalS(),p=Math.min(100,Math.round(ts/GOAL*100));
+  const ts=totalS(lastS()), p=Math.min(100,Math.round(ts/GOAL*100));
   document.getElementById('g-curr').textContent=fmt(ts);
   document.getElementById('g-pct').textContent=p+'%';
   document.getElementById('g-remain').textContent='还差 '+fmt(Math.max(0,GOAL-ts));
@@ -225,23 +261,24 @@ function updateGoal(){
 }
 
 function renderChannels(){
-  const ts=totalS();
-  document.getElementById('ch-grid').innerHTML=CH.map(c=>{
-    const v=last(c.history),p=Math.round(v/ts*100),diff=v-prev(c.history);
+  const ts=totalS(lastS()), cur=lastS(), prv=prevS();
+  document.getElementById('ch-grid').innerHTML=CH_CFG.map(c=>{
+    const v=cur[c.key]||0, p=Math.round(v/ts*100), diff=v-(prv[c.key]||0);
     return `<div class="ch-card">
       <div class="ch-top"><span class="ch-name">${c.name}</span><span class="ch-pill ${c.pillClass}">${p}%</span></div>
       <div class="ch-val">${fmt(v)}</div>
-      <div class="ch-track"><div class="ch-fill" style="width:${p}%;background:${c.fillColor}"></div></div>
+      <div class="ch-track"><div class="ch-fill" style="width:${p}%;background:${c.color}"></div></div>
       <div class="ch-foot"><span>占比 ${p}%</span><span>${diff>=0?'+':'-'}${fmt(diff)}</span></div>
     </div>`;
   }).join('');
 }
 
 function renderDebts(){
-  document.getElementById('debt-grid').innerHTML=DEBTS.map((d,i)=>{
-    const v=last(d.history),diff=v-prev(d.history),up=diff>0;
+  const cur=lastD(), prv=prevD();
+  document.getElementById('debt-grid').innerHTML=D_CFG.map(c=>{
+    const v=cur[c.key]||0, diff=v-(prv[c.key]||0), up=diff>0;
     return `<div class="dcard">
-      <div class="dcard-name">${d.name}</div>
+      <div class="dcard-name">${c.name}</div>
       <div class="dcard-val">${fmt(v)}</div>
       <div class="dcard-trend">
         <span class="trend-badge ${up?'badge-up':'badge-dn'}">${up?'▲':'▼'} ${fmt(Math.abs(diff))}</span>
@@ -251,15 +288,15 @@ function renderDebts(){
   }).join('');
 }
 
-let saveChart=null,debtChart=null;
 function renderCharts(){
-  document.getElementById('save-leg').innerHTML=CH.map(c=>`<span><span class="leg-sq" style="background:${c.fillColor}"></span>${c.name}</span>`).join('');
+  const months=sData.map(r=>r.month);
+  document.getElementById('save-leg').innerHTML=CH_CFG.map(c=>`<span><span class="leg-sq" style="background:${c.color}"></span>${c.name}</span>`).join('');
   if(saveChart) saveChart.destroy();
   saveChart=new Chart(document.getElementById('saveChart'),{
     type:'line',
-    data:{labels:MONTHS,datasets:CH.map(c=>({
-      label:c.name,data:c.history,
-      borderColor:c.fillColor,backgroundColor:c.fillColor+'20',
+    data:{labels:months,datasets:CH_CFG.map(c=>({
+      label:c.name,data:sData.map(r=>r[c.key]||0),
+      borderColor:c.color,backgroundColor:c.color+'20',
       borderWidth:2,tension:.4,pointRadius:3,pointHoverRadius:5,fill:false
     }))},
     options:{responsive:true,maintainAspectRatio:false,
@@ -270,13 +307,14 @@ function renderCharts(){
       }}
   });
 
-  document.getElementById('debt-leg').innerHTML=DEBTS.map((d,i)=>`<span><span class="leg-sq" style="background:${D_COLORS[i]}"></span>${d.name}</span>`).join('');
+  const dMonths=dData.map(r=>r.month);
+  document.getElementById('debt-leg').innerHTML=D_CFG.map(c=>`<span><span class="leg-sq" style="background:${c.color}"></span>${c.name}</span>`).join('');
   if(debtChart) debtChart.destroy();
   debtChart=new Chart(document.getElementById('debtChart'),{
     type:'bar',
-    data:{labels:MONTHS,datasets:DEBTS.map((d,i)=>({
-      label:d.name,data:d.history,
-      backgroundColor:D_COLORS[i]+'bb',borderWidth:0,borderRadius:4
+    data:{labels:dMonths,datasets:D_CFG.map(c=>({
+      label:c.name,data:dData.map(r=>r[c.key]||0),
+      backgroundColor:c.color+'bb',borderWidth:0,borderRadius:4
     }))},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
@@ -287,33 +325,54 @@ function renderCharts(){
   });
 }
 
-function refresh(){updateMetrics();updateGoal();renderChannels();renderDebts();renderCharts();}
+function render(){updateMetrics();updateGoal();renderChannels();renderDebts();renderCharts();}
 
 function openModal(){
   const now=new Date();
+  const m=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
   document.getElementById('modal-month').textContent=now.getFullYear()+'年'+(now.getMonth()+1)+'月';
-  CH.forEach(c=>{const el=document.getElementById('f-'+c.key);if(el)el.value=last(c.history);});
-  DEBTS.forEach(d=>{const el=document.getElementById('f-'+d.key);if(el)el.value=last(d.history);});
+  const cur=lastS(), dcur=lastD();
+  document.getElementById('f-alipay').value=cur.alipay||'';
+  document.getElementById('f-wechat').value=cur.wechat||'';
+  document.getElementById('f-cmb').value=cur.cmb||'';
+  document.getElementById('f-other').value=cur.other||'';
+  document.getElementById('f-d-cmb').value=dcur.cmb||'';
+  document.getElementById('f-d-citic').value=dcur.citic||'';
   document.getElementById('modal-bg').classList.add('open');
 }
+
 function closeModal(){document.getElementById('modal-bg').classList.remove('open');}
-function saveModal(){
-  CH.forEach(c=>{
-    const el=document.getElementById('f-'+c.key);
-    if(el){c.history.push(parseFloat(el.value)||last(c.history));c.history.shift();}
-  });
-  DEBTS.forEach(d=>{
-    const el=document.getElementById('f-'+d.key);
-    if(el){d.history.push(parseFloat(el.value)||last(d.history));d.history.shift();}
-  });
-  closeModal();refresh();
+
+async function saveModal(){
+  const btn=document.getElementById('save-btn');
+  btn.disabled=true; btn.textContent='保存中...';
+  const now=new Date();
+  const month=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const payload={
+    action:'update', month,
+    alipay: +document.getElementById('f-alipay').value||0,
+    wechat: +document.getElementById('f-wechat').value||0,
+    cmb_s:  +document.getElementById('f-cmb').value||0,
+    other:  +document.getElementById('f-other').value||0,
+    cmb_d:  +document.getElementById('f-d-cmb').value||0,
+    citic:  +document.getElementById('f-d-citic').value||0,
+  };
+  try {
+    await fetch(API, {method:'POST', body:JSON.stringify(payload)});
+    closeModal();
+    await loadData();
+  } catch(e){
+    showError('保存失败，请检查网络后重试');
+  } finally {
+    btn.disabled=false; btn.textContent='保存';
+  }
 }
 
 document.getElementById('modal-bg').addEventListener('click',function(e){
   if(e.target===this) closeModal();
 });
 
-refresh();
+loadData();
 </script>
 </body>
 </html>
