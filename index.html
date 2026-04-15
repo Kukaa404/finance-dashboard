@@ -32,6 +32,7 @@
 body{font-family:var(--font-sans);background:var(--color-background-primary);color:var(--color-text-primary);padding:1.5rem;max-width:860px;margin:0 auto}
 .db{padding:1.5rem 0 2rem}
 .row{display:grid;gap:10px}
+.r5{grid-template-columns:repeat(5,minmax(0,1fr))}
 .r4{grid-template-columns:repeat(4,minmax(0,1fr))}
 .r2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .sec{margin-bottom:2rem}
@@ -61,6 +62,7 @@ body{font-family:var(--font-sans);background:var(--color-background-primary);col
 .pill-teal{background:#E1F5EE;color:#0F6E56}
 .pill-amber{background:#FAEEDA;color:#633806}
 .pill-purple{background:#EEEDFE;color:#3C3489}
+.pill-coral{background:#FAECE7;color:#712B13}
 .ch-val{font-size:18px;font-weight:500;color:var(--color-text-primary);margin-bottom:7px}
 .ch-track{height:4px;background:var(--color-background-secondary);border-radius:99px;overflow:hidden}
 .ch-fill{height:100%;border-radius:99px;transition:width .6s ease}
@@ -86,16 +88,17 @@ body{font-family:var(--font-sans);background:var(--color-background-primary);col
 .modal-bg.open{display:flex}
 .modal{background:var(--color-background-primary);border-radius:var(--border-radius-lg);border:0.5px solid var(--color-border-tertiary);padding:1.375rem 1.5rem;width:340px;max-width:92vw;max-height:90vh;overflow-y:auto}
 .modal-title{font-size:15px;font-weight:500;color:var(--color-text-primary);margin-bottom:2px}
-.modal-sub{font-size:11px;color:var(--color-text-tertiary);margin-bottom:1.125rem}
+.modal-sub{font-size:11px;color:var(--color-text-tertiary);margin-bottom:1rem}
 .modal-group{font-size:10px;font-weight:500;color:var(--color-text-tertiary);letter-spacing:.07em;margin:14px 0 8px;padding-bottom:5px;border-bottom:0.5px solid var(--color-border-tertiary)}
 .modal-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .modal-row label{font-size:12px;color:var(--color-text-secondary)}
-.modal-row input{width:140px;font-size:13px;padding:5px 9px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);text-align:right}
+.modal-row input,.modal-row select{width:140px;font-size:13px;padding:5px 9px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);text-align:right}
+.modal-row select{text-align:left}
 .modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem}
 .btn-save{font-size:13px;padding:7px 20px;border-radius:var(--border-radius-md);border:none;background:#378ADD;color:#fff;cursor:pointer}
 .btn-save:disabled{opacity:.5;cursor:not-allowed}
 .btn-cancel{font-size:13px;padding:7px 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);cursor:pointer}
-@media(max-width:600px){.r4{grid-template-columns:repeat(2,minmax(0,1fr))}.r2{grid-template-columns:1fr}}
+@media(max-width:680px){.r5{grid-template-columns:repeat(2,minmax(0,1fr))}.r4{grid-template-columns:repeat(2,minmax(0,1fr))}.r2{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -109,7 +112,7 @@ body{font-family:var(--font-sans);background:var(--color-background-primary);col
   <div class="sec-label">总览</div>
   <div class="row r4">
     <div class="met"><div class="met-lbl">净资产</div><div class="met-val blue" id="m-net">—</div><div class="met-sub">存款 − 负债</div></div>
-    <div class="met"><div class="met-lbl">总存款</div><div class="met-val" id="m-total">—</div><div class="met-sub">四渠道合计</div></div>
+    <div class="met"><div class="met-lbl">总存款</div><div class="met-val" id="m-total">—</div><div class="met-sub">五渠道合计</div></div>
     <div class="met"><div class="met-lbl">总负债</div><div class="met-val red" id="m-debt">—</div><div class="met-sub">信用卡合计</div></div>
     <div class="met"><div class="met-lbl">本月净增</div><div class="met-val" id="m-inc">—</div><div class="met-sub">vs 上月净资产</div></div>
   </div>
@@ -135,7 +138,7 @@ body{font-family:var(--font-sans);background:var(--color-background-primary);col
 
 <div class="sec">
   <div class="sec-label">存款渠道</div>
-  <div class="row r4" id="ch-grid"></div>
+  <div class="row r5" id="ch-grid"></div>
 </div>
 
 <div class="sec">
@@ -161,21 +164,27 @@ body{font-family:var(--font-sans);background:var(--color-background-primary);col
 </div>
 
 <div class="upd-btn-wrap">
-  <button class="upd-btn" onclick="openModal()">✏ 更新本月数据</button>
+  <button class="upd-btn" onclick="openModal()">✏ 更新 / 修改数据</button>
 </div>
 
 </div>
 
 <div class="modal-bg" id="modal-bg">
   <div class="modal">
-    <div class="modal-title">更新本月数据</div>
-    <div class="modal-sub" id="modal-month"></div>
+    <div class="modal-title">更新 / 修改数据</div>
+    <div class="modal-sub">可选择修改任意已有月份，或新增本月数据</div>
+    <div class="modal-group">选择月份</div>
+    <div class="modal-row">
+      <label>月份</label>
+      <select id="f-month" onchange="onMonthChange()"></select>
+    </div>
     <div class="modal-group">存款渠道（当前余额）</div>
     <div class="modal-row"><label>支付宝</label><input id="f-alipay" type="number" placeholder="0"></div>
     <div class="modal-row"><label>微信</label><input id="f-wechat" type="number" placeholder="0"></div>
     <div class="modal-row"><label>招商银行</label><input id="f-cmb" type="number" placeholder="0"></div>
-    <div class="modal-row"><label>其他银行</label><input id="f-other" type="number" placeholder="0"></div>
-    <div class="modal-group">信用卡账单（本月消费）</div>
+    <div class="modal-row"><label>工商银行</label><input id="f-icbc" type="number" placeholder="0"></div>
+    <div class="modal-row"><label>其他存款</label><input id="f-extra" type="number" placeholder="0"></div>
+    <div class="modal-group">信用卡账单（当月消费）</div>
     <div class="modal-row"><label>招商信用卡</label><input id="f-d-cmb" type="number" placeholder="0"></div>
     <div class="modal-row"><label>中信信用卡</label><input id="f-d-citic" type="number" placeholder="0"></div>
     <div class="modal-foot">
@@ -187,50 +196,62 @@ body{font-family:var(--font-sans);background:var(--color-background-primary);col
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-const API = 'https://script.google.com/macros/s/AKfycbyTWXrYRm4mF5QyhQnptDFvWKk9WSbpswWN0AeE6xZeKN7Az9Vz9BgrhRgAILw0sRPC/exec';
-const GOAL = 1000000;
-const CH_CFG = [
-  {key:'alipay', name:'支付宝',   pillClass:'pill-blue',  color:'#378ADD'},
-  {key:'wechat', name:'微信',     pillClass:'pill-teal',  color:'#1D9E75'},
-  {key:'cmb',    name:'招商银行', pillClass:'pill-amber', color:'#BA7517'},
-  {key:'other',  name:'工商银行', pillClass:'pill-purple',color:'#7F77DD'},
+const API='https://script.google.com/macros/s/AKfycbyTWXrYRm4mF5QyhQnptDFvWKk9WSbpswWN0AeE6xZeKN7Az9Vz9BgrhRgAILw0sRPC/exec';
+const GOAL=1000000;
+const CH_CFG=[
+  {key:'alipay',name:'支付宝',  pillClass:'pill-blue',  color:'#378ADD'},
+  {key:'wechat',name:'微信',    pillClass:'pill-teal',  color:'#1D9E75'},
+  {key:'cmb',   name:'招商银行',pillClass:'pill-amber', color:'#BA7517'},
+  {key:'icbc',  name:'工商银行',pillClass:'pill-purple',color:'#7F77DD'},
+  {key:'extra', name:'其他存款',pillClass:'pill-coral', color:'#D85A30'},
 ];
-const D_CFG = [
-  {key:'cmb',   name:'招商信用卡', color:'#D85A30'},
-  {key:'citic', name:'中信信用卡', color:'#D4537E'},
+const D_CFG=[
+  {key:'cmb',  name:'招商信用卡',color:'#D85A30'},
+  {key:'citic',name:'中信信用卡',color:'#D4537E'},
 ];
 
-let sData=[], dData=[], saveChart=null, debtChart=null;
+let sData=[],dData=[],allSData=[],allDData=[],saveChart=null,debtChart=null;
 
 function fmt(n){return '¥'+Math.round(Math.abs(n)).toLocaleString('zh-CN')}
 
 function showError(msg){
   const el=document.getElementById('error-bar');
-  el.textContent=msg; el.style.display='block';
-  setTimeout(()=>el.style.display='none', 5000);
+  el.textContent=msg;el.style.display='block';
+  setTimeout(()=>el.style.display='none',5000);
+}
+
+function parseMonthKey(v){
+  if(!v) return '';
+  const s=String(v);
+  const m=s.match(/(\d{4})-(\d{2})/);
+  if(m) return m[1]+'-'+m[2];
+  const d=new Date(v);
+  if(!isNaN(d.getTime())) return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  return s;
+}
+
+function fmtMonthDisplay(v){
+  const m=String(v).match(/(\d{4})-(\d{2})/);
+  if(m) return m[1]+'年'+parseInt(m[2])+'月';
+  return v;
 }
 
 async function loadData(){
   document.getElementById('loading').style.display='block';
   document.getElementById('dashboard').style.display='none';
-  try {
-    const res = await fetch(API+'?action=read');
-    const json = await res.json();
-    const sRows = json.savings.slice(1);
-    const dRows = json.debts.slice(1);
-    const last6s = sRows.slice(-6);
-    const last6d = dRows.slice(-6);
-    function fmtMonth(v){
-      const d=new Date(v);
-      if(isNaN(d.getTime())) return String(v);
-      return (d.getFullYear())+'/'+(d.getMonth()+1)+'月';
-    }
-    sData = last6s.map(r=>({month:fmtMonth(r[0]),alipay:+r[1],wechat:+r[2],cmb:+r[3],other:+r[4]}));
-    dData = last6d.map(r=>({month:fmtMonth(r[0]),cmb:+r[1],citic:+r[2]}));
+  try{
+    const res=await fetch(API+'?action=read');
+    const json=await res.json();
+    const sRows=json.savings.slice(1);
+    const dRows=json.debts.slice(1);
+    allSData=sRows.map(r=>({month:parseMonthKey(r[0]),alipay:+r[1]||0,wechat:+r[2]||0,cmb:+r[3]||0,icbc:+r[4]||0,extra:+r[5]||0}));
+    allDData=dRows.map(r=>({month:parseMonthKey(r[0]),cmb:+r[1]||0,citic:+r[2]||0}));
+    sData=allSData.slice(-6);
+    dData=allDData.slice(-6);
     document.getElementById('loading').style.display='none';
     document.getElementById('dashboard').style.display='block';
     render();
-  } catch(e){
+  }catch(e){
     document.getElementById('loading').textContent='加载失败，请刷新重试';
     showError('无法连接数据源，请检查网络或 Apps Script 权限');
   }
@@ -240,12 +261,11 @@ function lastS(){return sData[sData.length-1]}
 function prevS(){return sData[sData.length-2]||lastS()}
 function lastD(){return dData[dData.length-1]}
 function prevD(){return dData[dData.length-2]||lastD()}
-
 function totalS(row){return CH_CFG.reduce((s,c)=>s+(row[c.key]||0),0)}
 function totalD(row){return D_CFG.reduce((s,c)=>s+(row[c.key]||0),0)}
 
 function updateMetrics(){
-  const ts=totalS(lastS()), td=totalD(lastD()), net=ts-td;
+  const ts=totalS(lastS()),td=totalD(lastD()),net=ts-td;
   const inc=net-(totalS(prevS())-totalD(prevD()));
   document.getElementById('m-net').textContent=fmt(net);
   document.getElementById('m-total').textContent=fmt(ts);
@@ -256,7 +276,7 @@ function updateMetrics(){
 }
 
 function updateGoal(){
-  const ts=totalS(lastS()), p=Math.min(100,Math.round(ts/GOAL*100));
+  const ts=totalS(lastS()),p=Math.min(100,Math.round(ts/GOAL*100));
   document.getElementById('g-curr').textContent=fmt(ts);
   document.getElementById('g-pct').textContent=p+'%';
   document.getElementById('g-remain').textContent='还差 '+fmt(Math.max(0,GOAL-ts));
@@ -266,9 +286,9 @@ function updateGoal(){
 }
 
 function renderChannels(){
-  const ts=totalS(lastS()), cur=lastS(), prv=prevS();
+  const ts=totalS(lastS()),cur=lastS(),prv=prevS();
   document.getElementById('ch-grid').innerHTML=CH_CFG.map(c=>{
-    const v=cur[c.key]||0, p=Math.round(v/ts*100), diff=v-(prv[c.key]||0);
+    const v=cur[c.key]||0,p=ts>0?Math.round(v/ts*100):0,diff=v-(prv[c.key]||0);
     return `<div class="ch-card">
       <div class="ch-top"><span class="ch-name">${c.name}</span><span class="ch-pill ${c.pillClass}">${p}%</span></div>
       <div class="ch-val">${fmt(v)}</div>
@@ -279,9 +299,9 @@ function renderChannels(){
 }
 
 function renderDebts(){
-  const cur=lastD(), prv=prevD();
+  const cur=lastD(),prv=prevD();
   document.getElementById('debt-grid').innerHTML=D_CFG.map(c=>{
-    const v=cur[c.key]||0, diff=v-(prv[c.key]||0), up=diff>0;
+    const v=cur[c.key]||0,diff=v-(prv[c.key]||0),up=diff>0;
     return `<div class="dcard">
       <div class="dcard-name">${c.name}</div>
       <div class="dcard-val">${fmt(v)}</div>
@@ -294,7 +314,7 @@ function renderDebts(){
 }
 
 function renderCharts(){
-  const months=sData.map(r=>r.month);
+  const months=sData.map(r=>fmtMonthDisplay(r.month));
   document.getElementById('save-leg').innerHTML=CH_CFG.map(c=>`<span><span class="leg-sq" style="background:${c.color}"></span>${c.name}</span>`).join('');
   if(saveChart) saveChart.destroy();
   saveChart=new Chart(document.getElementById('saveChart'),{
@@ -312,7 +332,7 @@ function renderCharts(){
       }}
   });
 
-  const dMonths=dData.map(r=>r.month);
+  const dMonths=dData.map(r=>fmtMonthDisplay(r.month));
   document.getElementById('debt-leg').innerHTML=D_CFG.map(c=>`<span><span class="leg-sq" style="background:${c.color}"></span>${c.name}</span>`).join('');
   if(debtChart) debtChart.destroy();
   debtChart=new Chart(document.getElementById('debtChart'),{
@@ -333,43 +353,55 @@ function renderCharts(){
 function render(){updateMetrics();updateGoal();renderChannels();renderDebts();renderCharts();}
 
 function openModal(){
+  const sel=document.getElementById('f-month');
   const now=new Date();
-  const m=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-  document.getElementById('modal-month').textContent=now.getFullYear()+'年'+(now.getMonth()+1)+'月';
-  const cur=lastS(), dcur=lastD();
-  document.getElementById('f-alipay').value=cur.alipay||'';
-  document.getElementById('f-wechat').value=cur.wechat||'';
-  document.getElementById('f-cmb').value=cur.cmb||'';
-  document.getElementById('f-other').value=cur.other||'';
-  document.getElementById('f-d-cmb').value=dcur.cmb||'';
-  document.getElementById('f-d-citic').value=dcur.citic||'';
+  const thisMonth=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const existingMonths=allSData.map(r=>r.month);
+  const options=[...existingMonths];
+  if(!options.includes(thisMonth)) options.push(thisMonth);
+  sel.innerHTML=options.map(m=>`<option value="${m}">${fmtMonthDisplay(m)}</option>`).join('');
+  sel.value=thisMonth;
+  onMonthChange();
   document.getElementById('modal-bg').classList.add('open');
+}
+
+function onMonthChange(){
+  const m=document.getElementById('f-month').value;
+  const sRow=allSData.find(r=>r.month===m)||{};
+  const dRow=allDData.find(r=>r.month===m)||{};
+  document.getElementById('f-alipay').value=sRow.alipay||'';
+  document.getElementById('f-wechat').value=sRow.wechat||'';
+  document.getElementById('f-cmb').value=sRow.cmb||'';
+  document.getElementById('f-icbc').value=sRow.icbc||'';
+  document.getElementById('f-extra').value=sRow.extra||'';
+  document.getElementById('f-d-cmb').value=dRow.cmb||'';
+  document.getElementById('f-d-citic').value=dRow.citic||'';
 }
 
 function closeModal(){document.getElementById('modal-bg').classList.remove('open');}
 
 async function saveModal(){
   const btn=document.getElementById('save-btn');
-  btn.disabled=true; btn.textContent='保存中...';
-  const now=new Date();
-  const month=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  btn.disabled=true;btn.textContent='保存中...';
+  const month=document.getElementById('f-month').value;
   const payload={
-    action:'update', month,
-    alipay: +document.getElementById('f-alipay').value||0,
-    wechat: +document.getElementById('f-wechat').value||0,
-    cmb_s:  +document.getElementById('f-cmb').value||0,
-    other:  +document.getElementById('f-other').value||0,
-    cmb_d:  +document.getElementById('f-d-cmb').value||0,
-    citic:  +document.getElementById('f-d-citic').value||0,
+    action:'update',month,
+    alipay:+document.getElementById('f-alipay').value||0,
+    wechat:+document.getElementById('f-wechat').value||0,
+    cmb_s: +document.getElementById('f-cmb').value||0,
+    icbc:  +document.getElementById('f-icbc').value||0,
+    extra: +document.getElementById('f-extra').value||0,
+    cmb_d: +document.getElementById('f-d-cmb').value||0,
+    citic: +document.getElementById('f-d-citic').value||0,
   };
-  try {
-    await fetch(API, {method:'POST', body:JSON.stringify(payload)});
+  try{
+    await fetch(API,{method:'POST',body:JSON.stringify(payload)});
     closeModal();
     await loadData();
-  } catch(e){
+  }catch(e){
     showError('保存失败，请检查网络后重试');
-  } finally {
-    btn.disabled=false; btn.textContent='保存';
+  }finally{
+    btn.disabled=false;btn.textContent='保存';
   }
 }
 
